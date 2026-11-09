@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrustVault — Audit Trail</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center gap-2" href="{{ url_for('dashboard') }}">
+                <i class="bi bi-shield-lock-fill text-primary fs-4"></i>
+                <span>TrustVault Audit Log</span>
+            </a>
+            <div class="d-flex align-items-center gap-2">
+                <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-light btn-sm me-1">
+                    <i class="bi bi-sliders"></i> Admin Dashboard
+                </a>
+                <a href="{{ url_for('logout') }}" class="btn btn-outline-light btn-sm">
+                    Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container py-4">
+        <div class="card card-custom">
+            <div class="card-header bg-dark text-white py-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <h5 class="mb-0 fw-bold d-flex align-items-center gap-2">
+                    <i class="bi bi-journal-check text-warning"></i> Master System Audit Trail
+                </h5>
+                <span class="badge bg-danger">Tamper-Monitored</span>
+            </div>
+            <div class="card-body">
+                {% if logs %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>Actor ID</th>
+                                <th>Document ID</th>
+                                <th>Action</th>
+                                <th>Details</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in logs %}
+                            <tr>
+                                <td><small class="text-secondary">{{ log.created_at }}</small></td>
+                                <td><span class="badge bg-secondary">User #{{ log.actor_id or 'System' }}</span></td>
+                                <td>{% if log.document_id %}<code>Doc #{{ log.document_id }}</code>{% else %}<span class="text-muted">-</span>{% endif %}</td>
+                                <td>
+                                    <span class="badge {% if 'DENIED' in log.action %}bg-danger{% elif log.action == 'UPLOAD' %}bg-success{% elif 'PERMISSION' in log.action %}bg-warning text-dark{% else %}bg-info text-dark{% endif %}">
+                                        {{ log.action }}
+                                    </span>
+                                </td>
+                                <td><span class="small">{{ log.details }}</span></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                    <div class="text-center py-4 text-muted">No audit log records found.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

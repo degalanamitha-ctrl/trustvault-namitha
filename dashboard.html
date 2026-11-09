@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrustVault — Dashboard</title>
+    <!-- Bootstrap 5 & Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+    <!-- Header Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom sticky-top py-2">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center gap-2 text-white" href="#">
+                <i class="bi bi-shield-lock-fill text-primary fs-3"></i>
+                <span class="fs-4 fw-bold">TrustVault</span>
+            </a>
+            
+            <div class="d-flex align-items-center gap-3">
+                <div class="text-end d-none d-sm-block">
+                    <span class="d-block text-white fw-semibold small">{{ user.username }}</span>
+                    <span class="badge rounded-pill {% if user.role == 'owner' %}role-badge-owner{% elif user.role == 'admin' %}role-badge-admin{% else %}role-badge-viewer{% endif %}">
+                        <i class="bi bi-shield-check me-1"></i>{{ user.role | upper }}
+                    </span>
+                </div>
+                <a href="{{ url_for('logout') }}" class="btn btn-outline-light btn-sm d-flex align-items-center gap-1 fw-medium px-3">
+                    <i class="bi bi-box-arrow-right"></i> Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container py-4">
+
+        <!-- Flash Alert Messages -->
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-primary alert-dismissible fade show d-flex align-items-center gap-2 mb-4 border-0 shadow-sm" role="alert">
+                    <i class="bi bi-info-circle-fill fs-5"></i>
+                    <div class="fw-medium">{{ message }}</div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <!-- Administrator Dashboard Options -->
+        {% if user.role == "admin" %}
+            <div class="card border-danger shadow-sm mb-4">
+                <div class="card-body d-flex align-items-center justify-content-between flex-wrap gap-3">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="p-3 bg-danger bg-opacity-10 text-danger rounded-3">
+                            <i class="bi bi-shield-lock fs-3"></i>
+                        </div>
+                        <div>
+                            <h5 class="card-title mb-1 fw-bold text-danger">Administrator Console</h5>
+                            <p class="card-text text-secondary small mb-0">Monitor accounts, document permissions, and system security logs.</p>
+                        </div>
+                    </div>
+                    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-danger btn-sm px-4 py-2 fw-semibold shadow-sm">
+                        Open Admin Dashboard <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Workspace Grid Layout -->
+        <div class="dashboard-layout {% if user.role != 'owner' %}full-width{% endif %}">
+            
+            <!-- Left Side: Upload PDF Section (Owner Only) -->
+            {% if user.role == "owner" %}
+            <div class="upload-section">
+                <div class="card card-custom">
+                    <div class="card-header border-bottom py-3">
+                        <h5 class="card-title mb-0 fw-bold d-flex align-items-center gap-2">
+                            <i class="bi bi-cloud-arrow-up-fill text-primary"></i> Upload Document
+                        </h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <form action="{{ url_for('upload_document') }}" method="POST" enctype="multipart/form-data">
+                            
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">Document Title</label>
+                                <input type="text" name="title" class="form-control" placeholder="e.g., Annual Salary Letter" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">Category</label>
+                                <input type="text" name="category" class="form-control" placeholder="e.g., HR, Finance, Legal" required>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label small fw-bold">Select PDF File</label>
+                                <input type="file" name="document" class="form-control" accept=".pdf,application/pdf" required>
+                                <div class="form-text small mt-1">
+                                    <i class="bi bi-shield-check text-success me-1"></i>Header check (%PDF-) active.
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-vault-upload w-100 py-2 d-flex align-items-center justify-content-center gap-2 shadow-sm">
+                                <i class="bi bi-lock-fill"></i> Upload to Vault
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Right Side: Documents Grid -->
+            <div class="documents-section">
+                <div class="card card-custom">
+                    <div class="card-header border-bottom py-3 d-flex align-items-center justify-content-between">
+                        <h5 class="card-title mb-0 fw-bold d-flex align-items-center gap-2">
+                            <i class="bi bi-folder-symlink-fill text-primary"></i> Vault Documents
+                        </h5>
+                        <span class="badge bg-secondary rounded-pill px-3 py-2 fw-medium">
+                            {{ documents|length if documents else 0 }} Files
+                        </span>
+                    </div>
+
+                    <div class="card-body p-4">
+                        {% if documents %}
+                            <div class="doc-cards-grid">
+                            {% for document in documents %}
+                                <div class="card doc-card p-3">
+                                    
+                                    <!-- Document Metadata -->
+                                    <div class="d-flex flex-column gap-2 mb-3">
+                                        <div class="d-flex justify-content-between align-items-start gap-2">
+                                            <h6 class="fw-bold mb-0 text-break fs-6">{{ document.title }}</h6>
+                                            <span class="category-pill text-nowrap">{{ document.category }}</span>
+                                        </div>
+                                        
+                                        <div class="d-flex flex-column gap-1 text-muted small">
+                                            <span class="text-truncate" title="{{ document.original_filename }}">
+                                                <i class="bi bi-file-earmark-pdf-fill text-danger me-1"></i>{{ document.original_filename }}
+                                            </span>
+                                            <span>
+                                                <i class="bi bi-clock-history me-1"></i>{{ document.created_at }}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Download and Delete Controls -->
+                                    <div class="d-flex gap-2 mb-3">
+                                        <a href="{{ url_for('download_document', document_id=document.id) }}" class="btn btn-download btn-sm w-100 py-2 d-inline-flex align-items-center justify-content-center gap-1">
+                                            <i class="bi bi-download"></i> Download
+                                        </a>
+
+                                        {% if (user.role == "owner" and document.owner_id == user.id) or user.role == "admin" %}
+                                            <form method="POST" action="{{ url_for('delete_document', document_id=document.id) }}" onsubmit="return confirm('Permanently delete this document?');" class="m-0">
+                                                <button type="submit" class="btn btn-outline-danger btn-sm py-2 px-3 d-inline-flex align-items-center gap-1">
+                                                    <i class="bi bi-trash-fill"></i>
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                    </div>
+
+                                    <!-- Permissions Panel (Owner Only) -->
+                                    {% if user.role == "owner" and document.owner_id == user.id %}
+                                        <div class="border-top pt-3">
+                                            
+                                            <!-- Share Form -->
+                                            <h6 class="fw-bold small mb-2 d-flex align-items-center gap-1">
+                                                <i class="bi bi-person-plus-fill text-primary"></i> Share Access
+                                            </h6>
+                                            <form method="POST" action="{{ url_for('share_document', document_id=document.id) }}" class="d-flex flex-column gap-2 mb-3">
+                                                <input type="email" name="email" class="form-control form-control-sm" placeholder="Viewer email" required>
+                                                <div class="input-group input-group-sm">
+                                                    <select name="permission" class="form-select form-select-sm fw-medium">
+                                                        <option value="read">Read Only</option>
+                                                        <option value="edit">Edit Access</option>
+                                                    </select>
+                                                    <button type="submit" class="btn btn-primary btn-sm px-3">Share</button>
+                                                </div>
+                                            </form>
+
+                                            <!-- Shared Users -->
+                                            <h6 class="fw-bold small mb-2 d-flex align-items-center gap-1">
+                                                <i class="bi bi-people-fill text-secondary"></i> Active Permissions
+                                            </h6>
+                                            {% if document.permissions %}
+                                                <div class="permissions-scroll d-flex flex-column gap-2">
+                                                {% for permission in document.permissions %}
+                                                    <div class="d-flex align-items-center justify-content-between p-2 rounded border border-secondary border-opacity-25">
+                                                        <div class="small">
+                                                            <span class="fw-bold">User #{{ permission.user_id }}</span>
+                                                            <span class="badge {% if permission.permission == 'edit' %}bg-warning text-dark{% else %}bg-info text-dark{% endif %} ms-1">
+                                                                {{ permission.permission }}
+                                                            </span>
+                                                        </div>
+
+                                                        <form method="POST" action="{{ url_for('revoke_access', document_id=document.id, user_id=permission.user_id) }}" class="m-0">
+                                                            <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-2 fw-medium" style="font-size: 0.75rem;">
+                                                                Revoke
+                                                            </button>
+                                                        </form>
+                                                    </div>
+                                                {% endfor %}
+                                                </div>
+                                            {% else %}
+                                                <p class="text-muted small fst-italic mb-0">No active external permissions.</p>
+                                            {% endif %}
+
+                                        </div>
+                                    {% endif %} 
+
+                                </div>
+                            {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="text-center py-5">
+                                <i class="bi bi-folder-x display-3 text-muted mb-3 d-block opacity-50"></i>
+                                <h6 class="fw-bold">No Documents Available</h6>
+                                <p class="text-muted small mb-0">Uploaded or shared confidential files will appear here.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
